@@ -1,0 +1,10 @@
+{
+  "name": "willskills",
+  "description": "High-signal pull request review: fans out to specialized reviewer subagents and posts only verified, noteworthy inline comments",
+  "version": "1.0.0",
+  "author": {
+    "name": "Willian Morais",
+    "email": "williandmorais@gmail.com"
+  },
+  "repository": "https://github.com/morais90/willskills"
+}

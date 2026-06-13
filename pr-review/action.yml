@@ -1,0 +1,59 @@
+name: Willskills PR Review
+description: High-signal pull request review via the willskills Claude Code plugin
+
+inputs:
+  claude_code_oauth_token:
+    description: Claude Code OAuth token
+    required: true
+  model:
+    description: Model id used for the review
+    required: false
+    default: claude-opus-4-8
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 1
+
+    - name: Gather PR context
+      id: ctx
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+      run: |
+        CONTEXT="$GITHUB_WORKSPACE/.pr-context.md"
+        {
+          echo "# Pull request #$PR"
+          echo
+          gh pr view "$PR" --json title,body \
+            --template '## Title{{"\n"}}{{.title}}{{"\n\n"}}## Description{{"\n"}}{{.body}}{{"\n"}}'
+          echo
+          echo "## Diff"
+          echo
+          gh pr diff "$PR"
+          echo
+          echo "## Existing inline comments (do NOT re-raise resolved / answered / out-of-scope items)"
+          gh api "repos/$REPO/pulls/$PR/comments" \
+            --jq '.[] | "- [\(.path):\(.line // .original_line)] @\(.user.login): \(.body)"' || true
+          echo
+          echo "## Existing top-level comments"
+          gh api "repos/$REPO/issues/$PR/comments" \
+            --jq '.[] | "- @\(.user.login): \(.body)"' || true
+        } > "$CONTEXT"
+        echo "path=$CONTEXT" >> "$GITHUB_OUTPUT"
+
+    - name: Run Claude Code Review
+      uses: anthropics/claude-code-action@v1
+      with:
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
+        plugin_marketplaces: "https://github.com/morais90/willskills.git"
+        plugins: "willskills@willskills"
+        prompt: "/willskills:review-pr ${{ steps.ctx.outputs.path }}"
+        claude_args: >-
+          --model ${{ inputs.model }}
+          --allowedTools "Task,mcp__github_inline_comment__create_inline_comment"
