@@ -1,0 +1,16 @@
+{
+  "name": "willskills",
+  "owner": {
+    "name": "Willian Morais",
+    "email": "williandmorais@gmail.com"
+  },
+  "description": "Reusable Claude Code plugins for development workflows",
+  "version": "1.0.0",
+  "plugins": [
+    {
+      "name": "willskills",
+      "source": "./plugins/willskills",
+      "description": "High-signal pull request review with specialized reviewer subagents"
+    }
+  ]
+}
