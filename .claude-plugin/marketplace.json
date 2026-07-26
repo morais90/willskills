@@ -10,7 +10,7 @@
     {
       "name": "willskills",
       "source": "./plugins/willskills",
-      "description": "Pull request workflow: open PRs that explain the why, review them with specialized subagents"
+      "description": "Git workflow: commits and PRs that explain the why, plus review with specialized subagents"
     }
   ]
 }

@@ -10,6 +10,12 @@ A high-signal pull-request reviewer. It fans out to five specialized reviewer su
 
 Command: `/willskills:review-pr <pr-context-file>`
 
+### Committing
+
+The `create-commit` skill writes one conventional commit for the change in front of it, with a short body that explains **why** rather than listing the diff. It stages deliberately by path, refuses `git add -A` and `--no-verify`, flags commits going straight to the default branch, and adds no attribution trailers.
+
+Skill: `/willskills:create-commit [files/folders]`
+
 ### Opening a PR
 
 The `create-pr` skill opens a pull request for the current branch with a short, plainly written description that explains **why** the change was made rather than restating the diff or walking through the implementation. It follows the project's PR template when one exists, resolves the base branch instead of assuming `main`, and writes in the language the repository already uses.
@@ -62,6 +68,7 @@ pr-review/action.yml                # the reusable composite action
 plugins/willskills/
   ├── .claude-plugin/plugin.json
   ├── commands/review-pr.md         # the /willskills:review-pr command
+  ├── skills/create-commit/SKILL.md # the create-commit skill
   ├── skills/create-pr/SKILL.md     # the create-pr skill
   └── agents/                       # the five reviewer subagents
 ```

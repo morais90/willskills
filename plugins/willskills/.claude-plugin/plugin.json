@@ -1,6 +1,6 @@
 {
   "name": "willskills",
-  "description": "Pull request workflow: open PRs that explain why a change was made, and review them with specialized subagents that post only verified, noteworthy inline comments",
+  "description": "Git workflow: write commits and PRs that explain why a change was made, and review them with specialized subagents that post only verified, noteworthy inline comments",
   "version": "1.0.0",
   "author": {
     "name": "Willian Morais",
