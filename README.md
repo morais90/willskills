@@ -22,6 +22,12 @@ The `create-pr` skill opens a pull request for the current branch with a short, 
 
 Skill: `/willskills:create-pr [title] [base-branch]`
 
+### Shipping a branch
+
+The `ship` skill is the spine over the other three: it gates on lint and tests, delegates the commit and the PR to the skills above, then works the review loop — judging each bot comment against the actual code rather than applying it blindly, and pausing at four approval checkpoints. It reads the validation commands off the repository, with `CLAUDE.md` taking precedence.
+
+Skill: `/willskills:ship`
+
 ## Use it in a project
 
 Add a small workflow that calls the `pr-review` action:
@@ -70,5 +76,6 @@ plugins/willskills/
   ├── commands/review-pr.md         # the /willskills:review-pr command
   ├── skills/create-commit/SKILL.md # the create-commit skill
   ├── skills/create-pr/SKILL.md     # the create-pr skill
+  ├── skills/ship/SKILL.md          # the ship skill, orchestrating the three above
   └── agents/                       # the five reviewer subagents
 ```
