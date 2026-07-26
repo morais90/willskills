@@ -4,9 +4,17 @@ Reusable [Claude Code](https://code.claude.com) plugins and GitHub Actions, shar
 
 ## `willskills` plugin
 
+### Reviewing a PR
+
 A high-signal pull-request reviewer. It fans out to five specialized reviewer subagents (code quality, security, test coverage, performance, documentation accuracy), then posts only **verified, noteworthy** findings as inline comments — no summaries, no nitpicks, no re-raising of points already settled.
 
 Command: `/willskills:review-pr <pr-context-file>`
+
+### Opening a PR
+
+The `create-pr` skill opens a pull request for the current branch with a short, plainly written description that explains **why** the change was made rather than restating the diff or walking through the implementation. It follows the project's PR template when one exists, resolves the base branch instead of assuming `main`, and writes in the language the repository already uses.
+
+Skill: `/willskills:create-pr [title] [base-branch]`
 
 ## Use it in a project
 
@@ -54,5 +62,6 @@ pr-review/action.yml                # the reusable composite action
 plugins/willskills/
   ├── .claude-plugin/plugin.json
   ├── commands/review-pr.md         # the /willskills:review-pr command
+  ├── skills/create-pr/SKILL.md     # the create-pr skill
   └── agents/                       # the five reviewer subagents
 ```

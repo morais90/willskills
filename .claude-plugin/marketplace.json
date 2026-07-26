@@ -10,7 +10,7 @@
     {
       "name": "willskills",
       "source": "./plugins/willskills",
-      "description": "High-signal pull request review with specialized reviewer subagents"
+      "description": "Pull request workflow: open PRs that explain the why, review them with specialized subagents"
     }
   ]
 }
