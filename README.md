@@ -48,10 +48,12 @@ jobs:
       pull-requests: write
       id-token: write
     steps:
-      - uses: morais90/willskills/pr-review@main
+      - uses: morais90/willskills/pr-review@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
+
+`@v1` is a floating tag that moves to the latest 1.x release, so you get fixes without opting into a breaking change. Pin an exact `@v1.2.3` if you would rather upgrade deliberately, or `@main` to track unreleased work.
 
 The action checks out the PR, gathers the diff **and the existing review threads** into a single context file, then runs the `willskills` plugin against it — so the reviewer subagents never call `gh` themselves (no duplication) and the lead reviewer can see what was already raised and skip it.
 
@@ -66,10 +68,27 @@ The action checks out the PR, gathers the diff **and the existing review threads
 
 - This repository must be **public** (or, if private, grant the calling repos access under Settings → Actions and provide a token the action can use to clone the marketplace).
 
+## Versioning
+
+The plugin follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and the version lives in both `.claude-plugin/marketplace.json` and `plugins/willskills/.claude-plugin/plugin.json`. Releases are cut by hand from the **Release** workflow (Actions → Release → Run workflow); everything else is derived from the commit history, so conventional commit subjects are what drive the version.
+
+| Commit | Bump |
+|--------|------|
+| `fix:` | patch |
+| `feat:` | minor |
+| `feat!:` or a `BREAKING CHANGE:` footer | major |
+
+Running the workflow computes the next version with [git-cliff](https://git-cliff.org), regenerates `CHANGELOG.md`, bumps both manifests, tags `vX.Y.Z`, moves the floating `vX` tag, and publishes a GitHub release with the notes for that version. Tick **dry run** to see the version and notes it would produce without tagging anything.
+
+Between releases, a push to `main` refreshes the *Unreleased* section of `CHANGELOG.md` on its own.
+
 ## Repository layout
 
 ```
 pr-review/action.yml                # the reusable composite action
+cliff.toml                          # changelog + version-bump rules
+.github/workflows/                  # changelog on push, release on dispatch
+.github/scripts/validate_plugin.py  # release gate: manifests, skills, agents
 .claude-plugin/marketplace.json     # marketplace manifest
 plugins/willskills/
   ├── .claude-plugin/plugin.json

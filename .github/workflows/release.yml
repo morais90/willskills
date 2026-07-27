@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Work out the next version and release notes without tagging or publishing
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Validate manifests, skills, and agents
+        run: python3 .github/scripts/validate_plugin.py
+
+  release:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install git-cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --bumped-version
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve the version to release
+        id: version
+        run: |
+          set -euo pipefail
+
+          if [ -z "$(git tag -l 'v[0-9]*')" ]; then
+            # No tags yet. The manifests already declare 1.0.0, so the first
+            # release matches them. git-cliff cannot help here: with no release
+            # to bump from it proposes 0.1.0 and then rejects it for not
+            # matching tag_pattern, exiting non-zero with nothing on stdout.
+            VERSION="1.0.0"
+          else
+            VERSION="$(git cliff --config cliff.toml --bumped-version)"
+            VERSION="${VERSION#v}"
+          fi
+
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Refusing to release: computed version '$VERSION' is not semver."
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "major=v${VERSION%%.*}" >> "$GITHUB_OUTPUT"
+          echo "Releasing v$VERSION"
+
+      - name: Fail if the tag already exists
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG already exists — there is nothing new to release."
+            exit 1
+          fi
+
+      - name: Write the changelog and the release notes
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.version.outputs.tag }}"
+
+          git cliff --config cliff.toml --tag "$TAG" --output CHANGELOG.md
+
+          # --unreleased, not --latest: --latest resolves to the newest tag that
+          # already exists, so it would hand this release the previous one's notes.
+          git cliff --config cliff.toml --tag "$TAG" --unreleased --strip all \
+            > "$RUNNER_TEMP/RELEASE_NOTES.md"
+
+          if ! [ -s "$RUNNER_TEMP/RELEASE_NOTES.md" ]; then
+            echo "::error::Release notes came out empty for $TAG."
+            exit 1
+          fi
+
+          echo "--- release notes ---"
+          cat "$RUNNER_TEMP/RELEASE_NOTES.md"
+
+      - name: Bump the version in the manifests
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          for f in .claude-plugin/marketplace.json plugins/willskills/.claude-plugin/plugin.json; do
+            tmp="$(mktemp)"
+            jq --arg v "$VERSION" '.version = $v' "$f" > "$tmp"
+            mv "$tmp" "$f"
+          done
+          git --no-pager diff --stat
+
+      - name: Stop here on a dry run
+        if: inputs.dry_run
+        run: |
+          echo "::notice::Dry run — would have released ${{ steps.version.outputs.tag }}. Nothing was tagged or published."
+
+      - name: Commit, tag, and move the major tag
+        if: ${{ !inputs.dry_run }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          MAJOR="${{ steps.version.outputs.major }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add CHANGELOG.md .claude-plugin/marketplace.json \
+            plugins/willskills/.claude-plugin/plugin.json
+          git commit -m "chore(release): $TAG [skip ci]"
+          git tag -a "$TAG" -m "Release $TAG"
+
+          # The floating major tag is what lets consumers of the composite
+          # action pin `morais90/willskills/pr-review@v1`.
+          git tag -f -a "$MAJOR" -m "Latest $MAJOR release"
+
+          git push origin main
+          git push origin "$TAG"
+          git push origin "$MAJOR" --force
+
+      - name: Create the GitHub release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --notes-file "$RUNNER_TEMP/RELEASE_NOTES.md"
