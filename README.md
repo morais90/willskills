@@ -12,19 +12,19 @@ Command: `/willskills:review-pr <pr-context-file>`
 
 ### Committing
 
-The `create-commit` skill writes one conventional commit for the change in front of it, with a short body that explains **why** rather than listing the diff. It stages deliberately by path, refuses `git add -A` and `--no-verify`, flags commits going straight to the default branch, and adds no attribution trailers.
+The `create-commit` skill writes one conventional commit for the change in front of it, with a short body that explains **why** rather than listing the diff. It stages deliberately by path, refuses `git add -A` and `--no-verify`, flags commits going straight to the default branch, and adds no attribution trailers. The one time it stops is at the end, to show the finished message and ask before committing.
 
 Skill: `/willskills:create-commit [files/folders]`
 
 ### Opening a PR
 
-The `create-pr` skill opens a pull request for the current branch with a short, plainly written description that explains **why** the change was made rather than restating the diff or walking through the implementation. It follows the project's PR template when one exists, resolves the base branch instead of assuming `main`, and writes in the language the repository already uses.
+The `create-pr` skill opens a pull request for the current branch with a short, plainly written description that explains **why** the change was made rather than restating the diff or walking through the implementation. It follows the project's PR template when one exists, resolves the base branch instead of assuming `main`, and writes in the language the repository already uses. Like the commit skill, it stops once at the end to show the title and body and ask before opening the PR.
 
 Skill: `/willskills:create-pr [title] [base-branch]`
 
 ### Shipping a branch
 
-The `ship` skill is the spine over the other three: it gates on lint and tests, delegates the commit and the PR to the skills above, then works the review loop — judging each bot comment against the actual code rather than applying it blindly, and pausing at four approval checkpoints. It reads the validation commands off the repository, with `CLAUDE.md` taking precedence.
+The `ship` skill is the spine over the other three: it gates on lint and tests, delegates the commit and the PR to the skills above, then works the review loop — judging each bot comment against the actual code rather than applying it blindly, and pausing at six approval checkpoints. It reads the validation commands off the repository, with `CLAUDE.md` taking precedence.
 
 Skill: `/willskills:ship`
 

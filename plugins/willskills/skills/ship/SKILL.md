@@ -4,7 +4,7 @@ description: >-
   Drive finished work on a branch through validation, commit, PR, and the review loop
   until no open comments remain. Runs lint and tests as a gate, delegates the wording to
   the create-commit and create-pr skills, then judges each review comment against the
-  code instead of applying it blindly, pausing at four approval checkpoints. Use when the
+  code instead of applying it blindly, pausing at six approval checkpoints. Use when the
   user wants to ship a branch, take changes through to a PR and handle the review, or
   close out the PR cycle.
 ---
@@ -37,11 +37,11 @@ When something goes red, fix it and re-run. When the fix is non-trivial or the f
 
 ### 2. Commit
 
-Invoke the `create-commit` skill and let it do its job. Do not write the message yourself.
+Invoke the `create-commit` skill and let it do its job. Do not write the message yourself. It asks the user to approve the message before the commit lands — that question is for the user, not for you to answer on their behalf.
 
 ### 3. Open the PR
 
-Invoke the `create-pr` skill, on the same terms. Keep the PR number and URL — the loop below needs them.
+Invoke the `create-pr` skill, on the same terms, including its own approval of the title and body. Keep the PR number and URL — the loop below needs them.
 
 ### 4. Work the review
 
@@ -75,25 +75,27 @@ Present each round as a matrix: comment → classification → verdict and evide
 
 ### Checkpoints
 
-Four places to stop, every time:
+Six places to stop, every time:
 
-1. **Anything ambiguous** — lay out the options and let the user choose.
-2. **Before calling a comment not valid** — show the reasoning and get an OK.
-3. **Before every amend and push** — show the diff.
-4. **Before any reply goes onto the PR** — show the text.
+1. **Before the commit lands** — owned by `create-commit`, which shows the message and asks.
+2. **Before the PR is opened** — owned by `create-pr`, which shows the title and body and asks.
+3. **Anything ambiguous** — lay out the options and let the user choose.
+4. **Before calling a comment not valid** — show the reasoning and get an OK.
+5. **Before every amend and push** — show the diff.
+6. **Before any reply goes onto the PR** — show the text.
 
-A valid finding with one obvious fix does not need permission to *be* fixed, but it still passes checkpoints 3 and 4.
+The first two are the sibling skills' to run; the rest are yours. A valid finding with one obvious fix does not need permission to *be* fixed, but it still passes checkpoints 5 and 6.
 
 ### Applying and replying
 
-Corrections to an open PR stay as **one clean commit**: `git commit --amend --no-edit`, then `git push --force-with-lease`, having re-validated first. This is the sanctioned exception to the `create-commit` rule against amending, and checkpoint 3 is where the user grants it — the diff goes up before the amend, never after.
+Corrections to an open PR stay as **one clean commit**: `git commit --amend --no-edit`, then `git push --force-with-lease`, having re-validated first. This is the sanctioned exception to the `create-commit` rule against amending, and checkpoint 5 is where the user grants it — the diff goes up before the amend, never after.
 
 Replies should read like a person wrote them: concise reasoning for the fix or the refusal, in the language the repository already uses, defaulting to Brazilian Portuguese when the signals are mixed. No em dashes, no emphatic filler. Where the team has already settled a question, reuse the settled argument instead of re-litigating it. Resolve each thread once it is genuinely addressed — applied, or refused with the user's blessing — so the loop can converge.
 
 ## Hard rules
 
 - **Never commit with validation red**, and never disable a hook to get past it.
-- **Never reimplement `create-commit` or `create-pr`.** Delegate to them.
+- **Never reimplement `create-commit` or `create-pr`.** Delegate to them, and never answer their confirmation on the user's behalf.
 - **Never apply or refuse a comment without reading the code it cites.**
 - **Never skip a checkpoint**, and never force-push without `--force-with-lease`.
 - **Never `git add .` or `git add -A`.**

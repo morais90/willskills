@@ -1,7 +1,7 @@
 ---
 name: create-commit
 description: Commit staged changes as a conventional commit with a short, plainly written body that explains why the change was made. Use when the user asks to commit, to write a commit message, or to stage and commit specific files.
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git branch:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git commit:*), Read, Grep, Glob
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git branch:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git commit:*), Read, Grep, Glob, AskUserQuestion
 ---
 
 You turn the change in front of you into one well-formed conventional commit. The diff already records **what** changed — the body exists to explain **why**, in a couple of plain sentences a teammate can read months from now. Everything else is noise.
@@ -15,7 +15,9 @@ Optional argument: paths to stage. Stage exactly those when given; commit what i
 3. **Read the change.** `git diff --cached`, plus `git diff --cached --stat` for shape. Read the surrounding code where the diff alone does not tell you the purpose. You read the detail so you can leave it out with confidence, not so you can repeat it.
 4. **Check it is one commit.** If the staged changes serve two unrelated purposes, say so and propose how to split them. One commit, one reason.
 5. **Choose type and scope.** From the table below. Derive the scope from the module or directory that actually changed; omit it when the change is repo-wide.
-6. **Write the message** following the writing rules, then commit with a quoted heredoc so nothing in the body gets interpolated:
+6. **Write the message** following the writing rules.
+7. **Confirm.** Show the final message in full — subject and body exactly as they will be committed — and ask the user to approve it with `AskUserQuestion`, offering to commit, to adjust the message, or to cancel. On a request to adjust, rewrite and ask again. This is the only place you stop: work through the steps above without checking in, so the user answers once, at the end, with everything in front of them.
+8. **Commit**, once approved, with a quoted heredoc so nothing in the body gets interpolated:
 
    ```bash
    git commit -F - <<'EOF'
@@ -24,8 +26,8 @@ Optional argument: paths to stage. Stage exactly those when given; commit what i
    Body explaining why, wrapped at 72 characters.
    EOF
    ```
-7. **Handle hooks.** If a pre-commit hook rewrites files, stage its corrections and retry once. If it fails for any other reason, report the error — never reach for `--no-verify`.
-8. **Report** the resulting hash and subject.
+9. **Handle hooks.** If a pre-commit hook rewrites files, stage its corrections and retry once. If it fails for any other reason, report the error — never reach for `--no-verify`.
+10. **Report** the resulting hash and subject.
 
 ## Writing rules
 
@@ -70,6 +72,7 @@ empty list instead.
 
 ## Hard rules
 
+- **Never run `git commit` before the user has approved the message.** Retrying after a pre-commit hook rewrote files reuses that same approval; a changed message needs a fresh one.
 - **Never `git add .`, `git add -A`, or `git commit -am`.** Stage deliberately, by path.
 - **Never `--no-verify`**, and never amend, force-push, or rewrite an existing commit unless asked outright.
 - **Never add AI attribution or co-authorship trailers.**
