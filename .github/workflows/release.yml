@@ -9,7 +9,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
@@ -25,10 +25,18 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     steps:
+      - name: Mint a token for the release app
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install git-cliff
         uses: orhun/git-cliff-action@v4
@@ -37,7 +45,7 @@ jobs:
           args: --bumped-version
         env:
           GITHUB_REPO: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Resolve the version to release
         id: version
@@ -45,10 +53,6 @@ jobs:
           set -euo pipefail
 
           if [ -z "$(git tag -l 'v[0-9]*')" ]; then
-            # No tags yet. The manifests already declare 1.0.0, so the first
-            # release matches them. git-cliff cannot help here: with no release
-            # to bump from it proposes 0.1.0 and then rejects it for not
-            # matching tag_pattern, exiting non-zero with nothing on stdout.
             VERSION="1.0.0"
           else
             VERSION="$(git cliff --config cliff.toml --bumped-version)"
@@ -76,15 +80,13 @@ jobs:
       - name: Write the changelog and the release notes
         env:
           GITHUB_REPO: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
           TAG="${{ steps.version.outputs.tag }}"
 
           git cliff --config cliff.toml --tag "$TAG" --output CHANGELOG.md
 
-          # --unreleased, not --latest: --latest resolves to the newest tag that
-          # already exists, so it would hand this release the previous one's notes.
           git cliff --config cliff.toml --tag "$TAG" --unreleased --strip all \
             > "$RUNNER_TEMP/RELEASE_NOTES.md"
 
@@ -113,20 +115,22 @@ jobs:
 
       - name: Commit, tag, and move the major tag
         if: ${{ !inputs.dry_run }}
+        env:
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
+          set -euo pipefail
           TAG="${{ steps.version.outputs.tag }}"
           MAJOR="${{ steps.version.outputs.major }}"
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BOT_ID="$(gh api "/users/$APP_SLUG%5Bbot%5D" --jq .id)"
+          git config user.name "$APP_SLUG[bot]"
+          git config user.email "$BOT_ID+$APP_SLUG[bot]@users.noreply.github.com"
 
           git add CHANGELOG.md .claude-plugin/marketplace.json \
             plugins/willskills/.claude-plugin/plugin.json
           git commit -m "chore(release): $TAG [skip ci]"
           git tag -a "$TAG" -m "Release $TAG"
-
-          # The floating major tag is what lets consumers of the composite
-          # action pin `morais90/willskills/pr-review@v1`.
           git tag -f -a "$MAJOR" -m "Latest $MAJOR release"
 
           git push origin main
@@ -136,7 +140,7 @@ jobs:
       - name: Create the GitHub release
         if: ${{ !inputs.dry_run }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
             --repo "${{ github.repository }}" \

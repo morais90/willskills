@@ -6,16 +6,24 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   update-changelog:
     runs-on: ubuntu-latest
     steps:
+      - name: Mint a token for the release app
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Generate CHANGELOG.md
         uses: orhun/git-cliff-action@v4
@@ -25,20 +33,23 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Commit when the changelog moved
+        env:
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          # Stage first: on the very first run CHANGELOG.md is untracked, and
-          # `git diff` alone would report it as unchanged and never commit it.
           git add CHANGELOG.md
           if git diff --cached --quiet -- CHANGELOG.md; then
             echo "No changes to CHANGELOG.md"
             exit 0
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BOT_ID="$(gh api "/users/$APP_SLUG%5Bbot%5D" --jq .id)"
+          git config user.name "$APP_SLUG[bot]"
+          git config user.email "$BOT_ID+$APP_SLUG[bot]@users.noreply.github.com"
+
           git commit -m "docs: update CHANGELOG.md [skip ci]"
           git push origin main
           echo "CHANGELOG.md updated and pushed"
