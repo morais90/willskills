@@ -1,7 +1,7 @@
 ---
 name: create-pr
 description: Open a pull request with a short, plainly written description that explains why the change was made, following the project's PR template. Use when the user asks to create, open, or draft a PR for the current branch, or asks you to write a PR description.
-allowed-tools: Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(git branch:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git push:*), Bash(gh pr view:*), Bash(gh pr create:*), Glob, Read, Write
+allowed-tools: Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(git branch:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git push:*), Bash(gh pr view:*), Bash(gh pr create:*), Glob, Read, Write, AskUserQuestion
 ---
 
 You open a pull request for the current branch. The diff already shows **what** changed — your description exists to explain **why**, in a few plain sentences, so a reviewer arrives already knowing what this is for. Everything else is noise.
@@ -21,7 +21,8 @@ Optional arguments, in order: a PR title, then a base branch. Use them when give
    Read it in full. A template that exists is not optional.
 4. **Understand the change.** Run `git log --oneline <base>..HEAD`, `git diff --stat <base>...HEAD`, and `git diff <base>...HEAD`. Read enough of the surrounding code to know the *purpose* of the change, not just its mechanics — the problem it solves and anything that would genuinely surprise a reviewer. You read the detail so you can leave it out with confidence, not so you can repeat it.
 5. **Write the title and body.** Follow the writing rules below. With a template: fill each section in place, preserve every heading and section, add and remove nothing, and tick the checkboxes the diff actually justifies. Without one, two or three short paragraphs are enough — what prompted the change, then what it does about it, plus a line on anything the reviewer should look at closely or any related issue.
-6. **Create it.** Write the body to a temp file and pass `--body-file` — never inline a multi-line body into the shell, where backticks and quotes will mangle it. Show the user the final title and body, then run `gh pr create --base <base> --title "<title>" --body-file <path>` and report the URL.
+6. **Confirm.** Show the final title and body in full, exactly as they will be published, and ask the user to approve them with `AskUserQuestion`, offering to open the PR, to adjust the description, or to cancel. On a request to adjust, rewrite and ask again. This is the only place you stop: work through the steps above without checking in, so the user answers once, at the end, with everything in front of them.
+7. **Create it**, once approved. Write the body to a temp file and pass `--body-file` — never inline a multi-line body into the shell, where backticks and quotes will mangle it. Run `gh pr create --base <base> --title "<title>" --body-file <path>` and report the URL.
 
 ## Writing rules
 
@@ -61,6 +62,7 @@ old methods still work in the meantime.
 
 ## Hard rules
 
+- **Never run `gh pr create` before the user has approved the title and body.**
 - **Never create a PR from the default branch**, from a dirty tree, or when one is already open for the branch.
 - **Never restructure a template** — no new sections, no renamed headings, no dropped ones, however empty they look.
 - **Never write a vague title or body.** "fixes", "updates", and "improvements" describe nothing; if you cannot say why the change was made, read more of the diff. Short is the goal, vague is not — a brief description still names the actual problem.
