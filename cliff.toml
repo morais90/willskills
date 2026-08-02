@@ -1,0 +1,75 @@
+# git-cliff configuration — https://git-cliff.org/docs/configuration
+# The commit types below mirror the table in the create-commit skill, so what the
+# skill writes is what the changelog groups by.
+
+[changelog]
+header = """
+# Changelog
+
+All notable changes to this project are recorded here. The project follows
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html), and the entries are
+generated from [Conventional Commits](https://www.conventionalcommits.org).
+"""
+
+body = """
+{%- macro remote_url() -%}
+  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+{%- endmacro -%}
+
+{% if version %}
+## [{{ version | trim_start_matches(pat="v") }}]({{ self::remote_url() }}/releases/tag/{{ version }}) — {{ timestamp | date(format="%Y-%m-%d") }}
+{%- else %}
+## Unreleased
+{%- endif %}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim | upper_first }}
+
+{% for commit in commits -%}
+- {{ commit.message | upper_first }}
+    {%- if commit.remote.pr_number %} ([#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }})){% endif %}
+{% endfor -%}
+{% endfor %}
+"""
+
+footer = ""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9]*"
+
+# Squash merges carry the PR number in the subject, which the body template
+# already renders as a link.
+commit_preprocessors = [{ pattern = '(?m) \(#[0-9]+\)$', replace = "" }]
+
+topo_order = false
+sort_commits = "oldest"
+
+# Ordering is carried by the HTML comment prefix, which `striptags` removes
+# before the group heading is rendered.
+commit_parsers = [
+  { message = "^chore\\(release\\)", skip = true },
+  { message = "^docs: update CHANGELOG", skip = true },
+  { message = "^feat", group = "<!-- 0 -->Features" },
+  { message = "^fix", group = "<!-- 1 -->Bug fixes" },
+  { message = "^perf", group = "<!-- 2 -->Performance" },
+  { message = "^refactor", group = "<!-- 3 -->Refactoring" },
+  { message = "^docs", group = "<!-- 4 -->Documentation" },
+  { message = "^test", group = "<!-- 5 -->Tests" },
+  { message = "^build", group = "<!-- 6 -->Build" },
+  { message = "^ci", group = "<!-- 7 -->CI" },
+  { message = "^style", group = "<!-- 8 -->Style" },
+  { message = "^chore", group = "<!-- 9 -->Chores" },
+]
+
+[remote.github]
+owner = "morais90"
+repo = "willskills"
+
+[bump]
+features_always_bump_minor = true
+breaking_always_bump_major = true
