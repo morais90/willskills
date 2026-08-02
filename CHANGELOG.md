@@ -14,6 +14,10 @@ generated from [Conventional Commits](https://www.conventionalcommits.org).
 - Add create-commit skill ([#3](https://github.com/morais90/willskills/pull/3))
 - Add ship skill ([#4](https://github.com/morais90/willskills/pull/4))
 
+### Bug fixes
+
+- Let git-cliff work out the first version instead of forcing it ([#7](https://github.com/morais90/willskills/pull/7))
+
 ### CI
 
 - Add semver release and changelog workflows ([#5](https://github.com/morais90/willskills/pull/5))
