@@ -4,7 +4,7 @@ All notable changes to this project are recorded here. The project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and the entries are
 generated from [Conventional Commits](https://www.conventionalcommits.org).
 
-## Unreleased
+## [1.0.0](https://github.com/morais90/willskills/releases/tag/v1.0.0) — 2026-08-02
 
 ### Features
 
