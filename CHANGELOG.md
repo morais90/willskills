@@ -14,6 +14,10 @@ generated from [Conventional Commits](https://www.conventionalcommits.org).
 
 - Stop losing findings to an early exit ([#9](https://github.com/morais90/willskills/pull/9))
 
+### CI
+
+- Run the reviewer on this repository's own pull requests ([#11](https://github.com/morais90/willskills/pull/11))
+
 ## [1.0.0](https://github.com/morais90/willskills/releases/tag/v1.0.0) — 2026-08-02
 
 ### Features
