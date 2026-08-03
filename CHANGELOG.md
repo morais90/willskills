@@ -10,6 +10,10 @@ generated from [Conventional Commits](https://www.conventionalcommits.org).
 
 - Ask before the commit and the PR land ([#8](https://github.com/morais90/willskills/pull/8))
 
+### Bug fixes
+
+- Stop losing findings to an early exit ([#9](https://github.com/morais90/willskills/pull/9))
+
 ## [1.0.0](https://github.com/morais90/willskills/releases/tag/v1.0.0) — 2026-08-02
 
 ### Features
