@@ -9,6 +9,10 @@ inputs:
     description: Model id used for the review
     required: false
     default: claude-opus-4-8
+  plugin_marketplace:
+    description: Marketplace the willskills plugin is installed from, as a git URL or a path in the workspace
+    required: false
+    default: https://github.com/morais90/willskills.git
 
 runs:
   using: composite
@@ -51,7 +55,7 @@ runs:
       uses: anthropics/claude-code-action@v1
       with:
         claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
-        plugin_marketplaces: "https://github.com/morais90/willskills.git"
+        plugin_marketplaces: ${{ inputs.plugin_marketplace }}
         plugins: "willskills@willskills"
         prompt: "/willskills:review-pr ${{ steps.ctx.outputs.path }}"
         claude_args: >-
