@@ -14,6 +14,10 @@ generated from [Conventional Commits](https://www.conventionalcommits.org).
 
 - Stop losing findings to an early exit ([#9](https://github.com/morais90/willskills/pull/9))
 
+### Documentation
+
+- Keep the description off the 72-column wrap ([#10](https://github.com/morais90/willskills/pull/10))
+
 ### CI
 
 - Run the reviewer on this repository's own pull requests ([#11](https://github.com/morais90/willskills/pull/11))
