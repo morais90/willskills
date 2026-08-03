@@ -1,7 +1,7 @@
 {
   "name": "willskills",
   "description": "Git workflow: write commits and PRs that explain why a change was made, and review them with specialized subagents that post only verified, noteworthy inline comments",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": {
     "name": "Willian Morais",
     "email": "williandmorais@gmail.com"
