@@ -40,15 +40,14 @@ Bad — a changelog the reviewer can already read in the diff:
 Good — the reasoning behind it, which the diff cannot show:
 
 ```
-Looking up users was spread across the codebase, so every caller handled
-errors a little differently and there was no obvious place to add caching.
+Looking up users was spread across the codebase, so every caller handled errors a little differently and there was no obvious place to add caching.
 
-This pulls all of it into one service, so from now on there is a single place
-to deal with that.
+This pulls all of it into one service, so from now on there is a single place to deal with that.
 
-Migrating the remaining callers is a follow-up, to keep this one small — the
-old methods still work in the meantime.
+Migrating the remaining callers is a follow-up, to keep this one small — the old methods still work in the meantime.
 ```
+
+**One paragraph, one line.** GitHub turns a single newline into a line break, so a body hard-wrapped at 72 or 80 columns arrives as a column of stubs broken mid-sentence. Let each paragraph run as one long line and separate paragraphs with a blank line. The wrapping rule in `create-commit` is for commit messages and does not carry over here.
 
 **Explain the why.** What prompted the change, what it was like before, and what the reviewer would have no way of guessing. That is the whole job.
 
