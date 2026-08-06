@@ -62,7 +62,8 @@ The action checks out the PR, gathers the diff **and the existing review threads
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `claude_code_oauth_token` | yes | — | Claude Code OAuth token |
-| `model` | no | `claude-opus-4-8` | Model id used for the review |
+| `model` | no | `claude-opus-5` | Model id used for the review |
+| `effort` | no | `high` | Reasoning effort level for the review (`low`, `medium`, `high`, `xhigh`, `max`) |
 
 ### Requirements
 
