@@ -8,7 +8,11 @@ inputs:
   model:
     description: Model id used for the review
     required: false
-    default: claude-opus-4-8
+    default: claude-opus-5
+  effort:
+    description: Reasoning effort level for the review (low, medium, high, xhigh, max)
+    required: false
+    default: high
   plugin_marketplace:
     description: Marketplace the willskills plugin is installed from, as a git URL or a path in the workspace
     required: false
@@ -60,4 +64,5 @@ runs:
         prompt: "/willskills:review-pr ${{ steps.ctx.outputs.path }}"
         claude_args: >-
           --model ${{ inputs.model }}
+          --effort ${{ inputs.effort }}
           --allowedTools "Read,Grep,Glob,Bash,Task,mcp__github_inline_comment__create_inline_comment"
