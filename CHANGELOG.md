@@ -4,6 +4,16 @@ All notable changes to this project are recorded here. The project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and the entries are
 generated from [Conventional Commits](https://www.conventionalcommits.org).
 
+## Unreleased
+
+### Features
+
+- Give the reviewer more room to think ([#12](https://github.com/morais90/willskills/pull/12))
+
+### Bug fixes
+
+- Keep reviews bounded on long-lived, docs-heavy PRs ([#13](https://github.com/morais90/willskills/pull/13))
+
 ## [1.1.0](https://github.com/morais90/willskills/releases/tag/v1.1.0) — 2026-08-03
 
 ### Features
