@@ -24,7 +24,7 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v6
       with:
-        fetch-depth: 1
+        fetch-depth: 0
 
     - name: Gather PR context
       id: ctx
@@ -33,29 +33,49 @@ runs:
         GH_TOKEN: ${{ github.token }}
         PR: ${{ github.event.pull_request.number }}
         REPO: ${{ github.repository }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
         CONTEXT="$GITHUB_WORKSPACE/.pr-context.md"
+        MARKER_PREFIX="<!-- willskills-pr-review: reviewed-through="
+        LAST_SHA=$(gh api "repos/$REPO/issues/$PR/comments" --paginate | \
+          jq -r --arg p "$MARKER_PREFIX" \
+            '.[] | select(.user.type == "Bot" and .user.login == "github-actions[bot]" and (.body | startswith($p))) | .body' | \
+          tail -1 | sed -E 's/^<!-- willskills-pr-review: reviewed-through=([0-9a-f]{40}) -->$/\1/') || true
+        if ! [[ "$LAST_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+          LAST_SHA=""
+        fi
+        DIFF=""
+        if [ -n "$LAST_SHA" ] && git cat-file -e "$LAST_SHA" 2>/dev/null; then
+          DIFF=$(git diff "$LAST_SHA" "$HEAD_SHA" --) || true
+        fi
         {
           echo "# Pull request #$PR"
           echo
           gh pr view "$PR" --json title,body \
             --template '## Title{{"\n"}}{{.title}}{{"\n\n"}}## Description{{"\n"}}{{.body}}{{"\n"}}'
           echo
-          echo "## Diff"
-          echo
-          gh pr diff "$PR"
+          if [ -n "$DIFF" ]; then
+            echo "## Diff (since the last completed review, commit $LAST_SHA — earlier commits were already reviewed)"
+            echo
+            echo "$DIFF"
+          else
+            echo "## Diff"
+            echo
+            gh pr diff "$PR"
+          fi
           echo
           echo "## Existing inline comments (do NOT re-raise resolved / answered / out-of-scope items)"
-          gh api "repos/$REPO/pulls/$PR/comments" \
-            --jq '.[] | "- [\(.path):\(.line // .original_line)] @\(.user.login): \(.body)"' || true
+          gh api "repos/$REPO/pulls/$PR/comments" --paginate | \
+            jq -r '.[] | "- [\(.path):\(.line // .original_line)] @\(.user.login): \(.body)"' || true
           echo
           echo "## Existing top-level comments"
-          gh api "repos/$REPO/issues/$PR/comments" \
-            --jq '.[] | "- @\(.user.login): \(.body)"' || true
+          gh api "repos/$REPO/issues/$PR/comments" --paginate | \
+            jq -r --arg p "$MARKER_PREFIX" '.[] | select(.body | startswith($p) | not) | "- @\(.user.login): \(.body)"' || true
         } > "$CONTEXT"
         echo "path=$CONTEXT" >> "$GITHUB_OUTPUT"
 
     - name: Run Claude Code Review
+      id: review
       uses: anthropics/claude-code-action@v1
       with:
         claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
@@ -66,3 +86,26 @@ runs:
           --model ${{ inputs.model }}
           --effort ${{ inputs.effort }}
           --allowedTools "Read,Grep,Glob,Bash,Task,mcp__github_inline_comment__create_inline_comment"
+
+    - name: Mark review as complete
+      if: success()
+      continue-on-error: true
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        MARKER=$(gh api "repos/$REPO/issues/$PR/comments" --paginate | \
+          jq '[.[] | select(.user.type == "Bot" and .user.login == "github-actions[bot]" and (.body | startswith("<!-- willskills-pr-review: reviewed-through=")))] | last')
+        MARKER_ID=$(echo "$MARKER" | jq -r '.id // empty')
+        OLD_SHA=$(echo "$MARKER" | jq -r '.body // empty' | sed -E 's/^<!-- willskills-pr-review: reviewed-through=([0-9a-f]{40}) -->$/\1/')
+        BODY="<!-- willskills-pr-review: reviewed-through=$HEAD_SHA -->"
+        if [ -n "$OLD_SHA" ] && [ "$OLD_SHA" != "$HEAD_SHA" ] && ! git merge-base --is-ancestor "$OLD_SHA" "$HEAD_SHA" 2>/dev/null; then
+          echo "Existing marker ($OLD_SHA) is not an ancestor of $HEAD_SHA — a newer run already finished first. Leaving the baseline as-is."
+        elif [ -n "$MARKER_ID" ]; then
+          gh api -X PATCH "repos/$REPO/issues/comments/$MARKER_ID" -f body="$BODY" >/dev/null
+        else
+          gh api "repos/$REPO/issues/$PR/comments" -f body="$BODY" >/dev/null
+        fi
