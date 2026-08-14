@@ -6,7 +6,7 @@ Reusable [Claude Code](https://code.claude.com) plugins and GitHub Actions, shar
 
 ### Reviewing a PR
 
-A high-signal pull-request reviewer. It fans out to five specialized reviewer subagents (code quality, security, test coverage, performance, documentation accuracy), then posts only **verified, noteworthy** findings as inline comments — no summaries, no nitpicks, no re-raising of points already settled.
+A high-signal pull-request reviewer. It fans out to the reviewer subagents the diff actually calls for — code quality, security, test coverage, performance, documentation accuracy — skipping the ones a given diff has nothing for, then posts only **verified, noteworthy** findings as inline comments — no summaries, no nitpicks, no re-raising of points already settled.
 
 Command: `/willskills:review-pr <pr-context-file>`
 
