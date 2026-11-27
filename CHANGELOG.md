@@ -14,6 +14,10 @@ generated from [Conventional Commits](https://www.conventionalcommits.org).
 
 - Keep reviews bounded on long-lived, docs-heavy PRs ([#13](https://github.com/morais90/willskills/pull/13))
 
+### Documentation
+
+- Add install instructions and focus README on users ([#14](https://github.com/morais90/willskills/pull/14))
+
 ## [1.1.0](https://github.com/morais90/willskills/releases/tag/v1.1.0) — 2026-08-03
 
 ### Features
